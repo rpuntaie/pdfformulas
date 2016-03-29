@@ -1,0 +1,3 @@
+PdfMiner>=20140328
+PyMuPDF>=1.8
+Pillow>=3.1.0
