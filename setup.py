@@ -6,7 +6,7 @@ import os
 
 # See https://pypi.python.org/pypi?%3Aaction=list_classifiers for classifiers
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -32,7 +32,7 @@ conf = dict(name='pdfformulas',
     zip_safe=False,
     install_requires=[
         'PdfMiner>=20140328',
-        'fitz>=1.8',
+        'PyMuPDF>=1.8',
         'Pillow>=3.1.0'
     ],
     tests_require=[],
