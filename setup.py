@@ -32,7 +32,6 @@ conf = dict(name='pdfformulas',
     zip_safe=False,
     install_requires=[
         'PdfMiner>=20140328',
-        'PyMuPDF>=1.8',
         'Pillow>=3.1.0'
     ],
     tests_require=[],

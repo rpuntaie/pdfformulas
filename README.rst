@@ -6,7 +6,6 @@ usage: pdfformulas.py [-h] [--dxmin DXMIN] [--frompage FROMPAGE]
 Dump the formulas of a PDF as PNG files in the ``formulas`` subfolder. The
 subfolder ``formulas`` is created, if not there yet. The PDF content must be
 accessible as text. 
-Requires: Pillow, PyMuPDF (needs compatible MuPDF installed), PdfMiner
 
 positional arguments:
   pdffile               PDF file to parse and dump formulas of
@@ -33,5 +32,6 @@ optional arguments:
                         which formulas are most often referenced in normal
                         text and are thus likely the most important ones.
 
-Installation: LibMuPDF and PyMuPDF will need to fit together.
-Possibly try installing them manual.
+
+Requires: Pillow, PyMuPDF (needs compatible MuPDF installed), PdfMiner
+Installation: LibMuPDF and PyMuPDF will need to be installed beforehand.
