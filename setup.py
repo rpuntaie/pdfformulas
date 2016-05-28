@@ -6,7 +6,7 @@ import os
 
 # See https://pypi.python.org/pypi?%3Aaction=list_classifiers for classifiers
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
