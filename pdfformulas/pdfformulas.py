@@ -87,7 +87,7 @@ def main():
     #args.stats = True
     #args.frompage = 15
     #args.topage = 907
-    ##args.page = 19#283+14
+    ##args.page = 408#283+14
     ##args.pdffile = '/mnt/usb/donkoks/ExplorationInMathematicalPhysics_ElegantLanguage.pdf'
     #args.pdffile = '/mnt/u/temp/stone_goldbart.pdf'
 
@@ -185,47 +185,52 @@ class formulas_to_images:
 
         #above, below
         def a_b_clause(o,center,i):
+            #a
             a = None
-            if i >0:
-                for x in range(i-1,-1,-1):
-                    a = objs[x]
-                    if (int(a.x0) <= xmin and issubclass(type(a),LTTextBox)):
-                        if (len(a._objs) > 1 and int(a._objs[-1].x0) > xmin) or a.y1 > center:
-                            na = None
-                            for aa in reversed(a._objs):
-                                if int(aa.x0) <= xmin and aa.y0 > center:
-                                    na = aa
-                                    break
-                            if na:
-                                a = na
-                                break
-                        elif a.y0 > center:
-                            break
-                else:
-                    a = None
-            #b
-            if int(o.x0) != xmin:
-                for ib in range(0,len(objs)):
-                    b = objs[ib]
-                    if not issubclass(type(b), LTTextBox):
-                        continue
-                    if int(b.x0) <= xmin and b.y1 < center:
-                        return a,b
-                    elif b.y0 < center:
-                        nb = None
-                        for bb in b._objs:
-                            if int(bb.x0) <= xmin and bb.y1 < center:
+            for ib in range(0,len(objs)):
+                if ib == i:
+                    continue
+                #ib = 7
+                anb = objs[ib]
+                if not issubclass(type(anb), LTTextBox):
+                    continue
+                if int(anb.x0) <= xmin and anb.y0 > center:
+                    if not a or anb.y0 < a.y0:
+                        a = anb
+                elif anb.y0 > center:
+                    nb = None
+                    for bb in anb._objs:
+                        if int(bb.x0) <= xmin and bb.y0 > center:
+                            if not nb or bb.y0 < nb.y0:
                                 nb = bb
-                                break
-                        if nb:
-                            return a,nb
+                    if nb and (not a or nb.y0 < a.y0):
+                        a = nb
+            #b
+            b = None
+            if i >= 0:
+                for ib in range(0,len(objs)):
+                    if ib == i:
+                        continue
+                    anb = objs[ib]
+                    if not issubclass(type(anb), LTTextBox):
+                        continue
+                    if int(anb.x0) <= xmin and anb.y1 < center:
+                        if not b or anb.y1 > b.y1:
+                            b = anb
+                    elif anb.y0 < center:
+                        nb = None
+                        for bb in anb._objs:
+                            if int(bb.x0) <= xmin and bb.y1 < center:
+                                if not nb or bb.y1 > nb.y1:
+                                    nb = bb
+                        if nb and (not b or nb.y1 > b.y1):
+                            b = nb
             else:
-                for b in o:
-                    if not issubclass(type(b), LTTextBox):
-                        continue;
-                    if int(b.x0) <= xmin and b.y1 < center:
-                        return a, b
-            return a, None
+                for anb in objs[-i-1]._objs:
+                    if anb.y1 < center:
+                        if not b or anb.y1 > b.y1:
+                            b = anb
+            return a, b
 
         pg = self.fitzdoc.loadPage(pnum-1)
         pm=pg.getPixmap()
@@ -236,7 +241,7 @@ class formulas_to_images:
         tf.close()
         #im.show()
 
-        i_o = [(i,o) for i,o in enumerate(objs) 
+        i_o = [int(o.x0)!=xmin and (i,o) or (-i-1,o._objs[0]) for i,o in enumerate(objs) 
                 if issubclass(type(o),LTTextBox)
                     and re.search(self.formulaiddef,o.get_text())]
         i_o = list(sorted(i_o,key=lambda x:_first_char(x[1]).y0,reverse=True))
@@ -244,22 +249,23 @@ class formulas_to_images:
         i_o_s = [imy]
         i_o_e = [imy]
         for ii, (i, o) in enumerate(i_o):
-            och = _first_char(o)
-            i_o_s.append(och.y1)
-            i_o_e.append(och.y0)
+            ochf = _first_char(o)
+            i_o_s.append(ochf.y1)
+            i_o_e.append(ochf.y0)
         i_o_s.append(0)
         i_o_e.append(0)
         #i_o_s 
         #i_o_e 
 
+        iilen = len(i_o)
         for ii, (i, o) in enumerate(i_o):
-            #ii, (i,o) = 2, i_o[2]
+            #ii, (i,o) = 3, i_o[3]
             ochf = _first_char(o)
             ochl = _last_char(o)
             dy = ochf.y1 - ochf.y0
             _frm,_to = i_o_s[ii+2],i_o_e[ii]
             cutrect = [xmin, _frm, ochl.x1, _to] #include the number...
-            center = (och.y0 + och.y1)/2
+            center = (ochf.y0 + ochf.y1)/2
             a,b = a_b_clause(o, center, i)
             found_a_b = 0
             if b and b.y1>_frm and b.y1<_to:
@@ -268,7 +274,7 @@ class formulas_to_images:
             if a and a.y0>_frm and a.y0<_to:
                 found_a_b += 1
                 cutrect[3] = a.y0
-            if found_a_b == 2:
+            if found_a_b == 2 or (ii==0 and b) or (ii==iilen-1 and a):
                 cutrect[2] = ochf.x0 #unless we found y range
 
             #cutrect
