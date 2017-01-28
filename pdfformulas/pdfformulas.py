@@ -15,7 +15,7 @@ Requires:Pillow, PyMuPDF, PdfMiner
 from __future__ import print_function
 import os, os.path, sys
 
-# https://github.com/rk700/PyMuPDF
+# https://github.com/rk700/PyMuPDF -> fitz
 # https://github.com/euske/pdfminer
 
 
@@ -85,10 +85,11 @@ def main():
     #args.formulaid = FORMULA_ID
     #args.dxmin = 0
     #args.stats = True
-    #args.frompage = 423
-    #args.topage = 423
-    #args.page = 423
-    #args.pdffile = '/mnt/usb/donkoks/ExplorationInMathematicalPhysics_ElegantLanguage.pdf'
+    #args.frompage = 15
+    #args.topage = 907
+    ##args.page = 19#283+14
+    ##args.pdffile = '/mnt/usb/donkoks/ExplorationInMathematicalPhysics_ElegantLanguage.pdf'
+    #args.pdffile = '/mnt/u/temp/stone_goldbart.pdf'
 
     pdffile = args.pdffile 
     imagefolder = os.path.join(os.path.dirname(pdffile),'formulas')
@@ -122,12 +123,24 @@ def _first_char(o):
         o = o._objs[0]
     return o._objs[0]
 
+def _last_char(o):
+    while not isinstance(o._objs[0], LTChar):
+        o = o._objs[0]
+    for i,o in enumerate(reversed(o._objs)):
+        if isinstance(o, LTChar):
+            break
+    #o
+    return o
+
 class formulas_to_images:
     """ convert mathematical formulas of a pdf to images 
     and dump them in the ``formulas`` subfolder.
+
+    feh is good to check the images
     """
 
     def __init__(self, pdffile, imagefolder, formulaid = FORMULA_ID, dxmin=0): 
+        #imagefolder, formulaid, dxmin = imagefolder,args.formulaid, args.dxmin
 
         self.pdffile     = pdffile     
         self.imagefolder = imagefolder 
@@ -221,37 +234,63 @@ class formulas_to_images:
         im=Image.open(tf.name)
         imx,imy = im.size
         tf.close()
-
-        def cut(cutrect):
-            x0,y0,x1,y1 = cutrect
-            cr = [x0,imy - y1,x1, imy - y0]
-            im2 = im.crop([int(round(x))for x in cr])
-            try:
-                return _trim(im2)
-            except:
-                return im2
+        #im.show()
 
         i_o = [(i,o) for i,o in enumerate(objs) 
                 if issubclass(type(o),LTTextBox)
                     and re.search(self.formulaiddef,o.get_text())]
+        i_o = list(sorted(i_o,key=lambda x:_first_char(x[1]).y0,reverse=True))
+
+        i_o_s = [imy]
+        i_o_e = [imy]
+        for ii, (i, o) in enumerate(i_o):
+            och = _first_char(o)
+            i_o_s.append(och.y1)
+            i_o_e.append(och.y0)
+        i_o_s.append(0)
+        i_o_e.append(0)
+        #i_o_s 
+        #i_o_e 
 
         for ii, (i, o) in enumerate(i_o):
-            #ii, (i,o) = 0, i_o[0]
+            #ii, (i,o) = 2, i_o[2]
+            ochf = _first_char(o)
+            ochl = _last_char(o)
+            dy = ochf.y1 - ochf.y0
+            _frm,_to = i_o_s[ii+2],i_o_e[ii]
+            cutrect = [xmin, _frm, ochl.x1, _to] #include the number...
+            center = (och.y0 + och.y1)/2
+            a,b = a_b_clause(o, center, i)
+            found_a_b = 0
+            if b and b.y1>_frm and b.y1<_to:
+                found_a_b += 1
+                cutrect[1] = b.y1
+            if a and a.y0>_frm and a.y0<_to:
+                found_a_b += 1
+                cutrect[3] = a.y0
+            if found_a_b == 2:
+                cutrect[2] = ochf.x0 #unless we found y range
+
+            #cutrect
+            for repi in [1,2]:
+                x0,y0,x1,y1 = cutrect
+                cr = [x0,imy - y1,x1, imy - y0]
+                im2 = im.crop([int(round(x))for x in cr])
+                #im2.show()
+                try:
+                    im1 = _trim(im2)
+                    if not im1:#= empty
+                        cutrect = [xmin, i_o_s[ii+2], ochl.x1, i_o_e[ii]]
+                        continue
+                except:
+                    im1 = im2
+                    break
+
+            #im1.show() 
             name = o.get_text().split('\n')[0]
             for f,t in zip('.()','_f__'): 
                 name = name.replace(f,t).strip()
-            och = _first_char(o)
-            dy = och.y1 - och.y0
-            center = (och.y0 + och.y1)/2
-            cutrect = [xmin, center - dy, och.x0, center + dy]
-            a,b = a_b_clause(o, center, i)
-            if b:
-                cutrect[1] = b.y1
-            if a:
-                cutrect[3] = a.y0
-
-            im1 = cut(cutrect)
-            #im1.show()
+            #name
             name = name + 'p%d.png'%pnum
             newfn = os.path.join(self.imagefolder,name)
             print(newfn)
@@ -262,12 +301,14 @@ class formulas_to_images:
         """finds all formulas and returns
         {formula : [page number per reference]}
         """
+        #frompage,topage=(args.frompage, args.topage)
         f_p_rs = defaultdict(list)
         for pnum in range(self.fitzdoc.pageCount):
             if frompage and pnum < frompage:
                 continue
             if topage and pnum > topage:
                 break
+            #pnum = frompage
             pg = self.fitzdoc.loadPage(pnum)
             text = pg.getText()
             spnum = str(pnum)
