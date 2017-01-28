@@ -1,6 +1,9 @@
 #! /usr/bin/env python2
 # vim: fileencoding=utf-8 
 
+#sudo python2 setup.py bdist_wheel --universal
+#twine upload ./dist/pdfformulas*.whl
+
 from setuptools import setup
 import os
 
@@ -21,6 +24,7 @@ conf = dict(name='pdfformulas',
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2.7"
     ],
     keywords=['PDF, Formula'],
     author = 'Roland Puntaier',
@@ -45,4 +49,3 @@ conf = dict(name='pdfformulas',
 
 if __name__ == '__main__':
     setup(**conf)
-
